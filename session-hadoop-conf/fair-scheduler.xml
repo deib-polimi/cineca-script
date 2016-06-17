@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<allocations>
+<queue name="default"><weight>100</weight><schedulingMode>fair</schedulingMode></queue>
+<!-- <queue name="queue_2"><weight>75</weight><schedulingMode>fair</schedulingMode></queue> -->
+</allocations>

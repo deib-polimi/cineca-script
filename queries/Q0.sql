@@ -1,0 +1,2 @@
+DESCRIBE FORMATTED store_sales;
+

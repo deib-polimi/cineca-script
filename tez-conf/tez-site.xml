@@ -1,0 +1,16 @@
+<configuration>
+	<property>
+		<name>tez.lib.uris</name>
+		<value>${fs.default.name}/apps/tez-0.6.2/tez-0.6.2.tar.gz</value>
+	</property>
+	<!-- <property>
+  		<description>Enable Tez to use the Timeline Server for History Logging</description>
+    		<name>tez.history.logging.service.class</name>
+    		<value>org.apache.tez.dag.history.logging.impl.SimpleHistoryLoggingService</value>
+	</property>
+	<property>
+	        <name>tez.simple.history.logging.dir</name>
+	        <value>${fs.default.name}/tez-history</value>
+	</property>
+	-->
+</configuration>
