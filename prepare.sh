@@ -13,6 +13,8 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
+rm -rf local
+
 wget http://home.deib.polimi.it/arizzi/cineca/hive-tez-binaries.tar.gz
 tar -xvf hive-tez-binaries.tar.gz
 rm -f hive-tez-binaries.tar.gz
@@ -20,3 +22,7 @@ rm -f hive-tez-binaries.tar.gz
 wget http://home.deib.polimi.it/arizzi/cineca/dsdgen.tar.gz
 tar -xvf dsdgen.tar.gz
 rm -f dsdgen.tar.gz
+
+wget http://home.deib.polimi.it/arizzi/cineca/spark-binaries.tar.gz
+tar -xvf spark-binaries.tar.gz
+rm -f spark-binaries.tar.gz
