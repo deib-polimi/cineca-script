@@ -1,0 +1,11 @@
+export HIVE_HOME="${SCRIPT_PATH}/local/apache-hive-1.2.1-bin/"
+export TEZ_VERSION="0.6.2"
+export TEZ_DIR="${SCRIPT_PATH}/local/apache-tez-${TEZ_VERSION}-src"
+export SPARK_HOME="${SCRIPT_PATH}/local/spark-1.6.0-bin-hadoop2.4"
+
+#FIXME export CINECA_ACCOUNT="INSERT_ACCOUNT"
+#FIXME export BASE_LOG_DIR="/pico/home/userexternal/USER/output/"
+#FIXME export DB_DIR="/user/hadoop-user/db"
+#FIXME export DB_LOCAL_DIR="/pico/scratch/userexternal/INSERT_USER/tpcds"
+#FIXME export JOB_DIR="$HOME/jobs"
+#FIXME export HADOOP_CONF="hadoop-conf"
