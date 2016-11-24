@@ -1,0 +1,9 @@
+from pyspark.sql import HiveContext
+from pyspark import SparkContext
+
+sc = SparkContext(appName="HiveQuery")
+hc = HiveContext(sc)
+
+hc.sql("use ${DB}");
+
+hc.sql("""

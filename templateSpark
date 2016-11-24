@@ -1,0 +1,113 @@
+#!/bin/bash
+
+#PBS -A V_AC
+#PBS -l walltime=V_WT
+#PBS -l select=V_NN:ncpus=V_NC:mem=V_MM
+#PBS -q parallel
+
+## Copyright 2016 Alessandro Maria Rizzi
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
+## Environment configuration
+export MAX_WALLTIME="V_WT"
+export NUM_NODES="V_NN"
+export NUM_CPUS="V_NC"
+export MEM="V_MM"
+export QUERIES="V_QR"
+export SCALE="V_SC"
+export ITERATIONS="N_IT"
+
+nodes=($( cat $PBS_NODEFILE | sort | uniq ))
+
+module load profile/advanced hadoop/2.5.1
+
+function host_name {
+  echo $1 | awk -F. '{ print $1 }'
+}
+
+export SCRIPT_PATH="V_SP"
+. ${SCRIPT_PATH}/config
+export PATH=$SPARK_HOME/bin:$PATH
+export HADOOP_USER_CLASSPATH_FIRST=true
+
+export LOG_DIR="$BASE_LOG_DIR/${NUM_NODES}_${NUM_CPUS}_${MEM}_${SCALE}/${PBS_JOBID}"
+export QUERY_DIR="$SCRIPT_PATH/queries"
+
+mkdir -p $LOG_DIR
+cd $LOG_DIR
+
+echo $MAX_WALLTIME > "$LOG_DIR/maxWallTime"
+echo $PBS_JOBID > "$LOG_DIR/id"
+
+rm -f $HOST_FILE
+
+
+### Get the list of available nodes
+if [ -e "$PBS_NODEFILE" ]; then
+    cp $PBS_NODEFILE $LOG_DIR/nodes
+fi
+
+export MYHADOOP_HOME=$SCRIPT_PATH/myhadoop
+echo "Conf: $HADOOP_CONF_DIR"
+# Configure a new HADOOP instance using PBS job information
+$MYHADOOP_HOME/bin/myhadoop-configure.sh -c $HADOOP_CONF_DIR
+# Start the Datanode, Namenode, and the Job Scheduler 
+$HADOOP_HOME/sbin/start-dfs.sh
+
+# Start Spark
+cat $PBS_NODEFILE | uniq > ${SPARK_HOME}/conf/slaves
+${SPARK_HOME}/sbin/start-all.sh
+export SPARK_CLUSTER_URL="spark://${nodes[0]%%[.]*}:7077"
+
+echo "Clean up..."
+hdfs dfs -rm -r -f /tmp
+hdfs dfs -rm -r -f $DB_DIR/$SCALE
+echo "Creating database..."
+STARTTIME=$(date +%s)
+hdfs dfs -mkdir -p $DB_DIR
+$SCRIPT_PATH/copyDb.sh $DB_DIR $DB_LOCAL_DIR/$SCALE
+ENDTIME=$(date +%s)
+echo "Database copied in $(($ENDTIME - $STARTTIME)) seconds"
+
+export DB=tpcds_text_${SCALE}
+export LOCATION="hdfs://${DB_DIR}/${SCALE}"
+cat $SCRIPT_PATH/templateInitDb | envsubst > $LOG_DIR/initHive.py
+${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.eventLog.enabled=true --conf spark.eventLog.dir=${LOG_DIR} $LOG_DIR/initHive.py
+
+QUERYEXTENSION=sql
+
+for QUERY in $QUERIES; do
+    mkdir -p $LOG_DIR/hive/$QUERY
+    mkdir -p $LOG_DIR/logs/$QUERY
+    ${SCRIPT_PATH}/preparePythonQuery.sh $QUERY_DIR/${QUERY}.${QUERYEXTENSION} $LOG_DIR/hive/$QUERY/$QUERY.py 
+    i=0
+    while [ $i -lt $ITERATIONS ]; do
+        let i++
+        echo "Launching query $QUERY iteration $i..."
+        STARTTIME=$(date +%s)
+	${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.eventLog.enabled=true --conf spark.eventLog.dir=${LOG_DIR}/logs/$QUERY $LOG_DIR/hive/$QUERY/$QUERY.py > $LOG_DIR/hive/$QUERY/$i.out
+        ENDTIME=$(date +%s)
+        echo "Query performed in $(($ENDTIME - $STARTTIME)) seconds"        
+    done   
+done
+
+# Stop Spark
+${SPARK_HOME}/sbin/stop-all.sh
+
+
+# Stop HADOOP services
+$HADOOP_HOME/sbin/stop-dfs.sh
+
+$MYHADOOP_HOME/bin/myhadoop-cleanup.sh > /dev/null
+
