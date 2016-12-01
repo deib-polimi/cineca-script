@@ -87,6 +87,9 @@ ${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.eventL
 
 QUERYEXTENSION=sql
 
+export TEMP_DIR=${CINECA_SCRATCH}/tmp
+mkdir -p ${TEMP_DIR}
+
 for QUERY in $QUERIES; do
     mkdir -p $LOG_DIR/hive/$QUERY
     mkdir -p $LOG_DIR/logs/$QUERY
@@ -96,7 +99,7 @@ for QUERY in $QUERIES; do
         let i++
         echo "Launching query $QUERY iteration $i..."
         STARTTIME=$(date +%s)
-	${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.eventLog.enabled=true --conf spark.eventLog.dir=${LOG_DIR}/logs/$QUERY $LOG_DIR/hive/$QUERY/$QUERY.py > $LOG_DIR/hive/$QUERY/$i.out
+	${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.local.dir=${TEMP_DIR} --conf spark.eventLog.enabled=true --conf spark.eventLog.dir=${LOG_DIR}/logs/$QUERY $LOG_DIR/hive/$QUERY/$QUERY.py > $LOG_DIR/hive/$QUERY/$i.out
         ENDTIME=$(date +%s)
         echo "Query performed in $(($ENDTIME - $STARTTIME)) seconds"        
     done   
