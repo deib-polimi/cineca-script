@@ -65,6 +65,10 @@ $MYHADOOP_HOME/bin/myhadoop-configure.sh -c $HADOOP_CONF_DIR
 # Start the Datanode, Namenode, and the Job Scheduler 
 $HADOOP_HOME/sbin/start-dfs.sh
 
+export TEMP_DIR=${CINECA_SCRATCH}/tmp
+mkdir -p ${TEMP_DIR}
+echo "SPARK_LOCAL_DIRS=\"${TEMP_DIR}\"" >> ${SPARK_HOME}/conf/spark-env.sh
+
 # Start Spark
 cat $PBS_NODEFILE | uniq > ${SPARK_HOME}/conf/slaves
 ${SPARK_HOME}/sbin/start-all.sh
@@ -86,9 +90,6 @@ cat $SCRIPT_PATH/templateInitDb | envsubst > $LOG_DIR/initHive.py
 ${SPARK_HOME}/bin/spark-submit --master ${SPARK_CLUSTER_URL} --conf spark.eventLog.enabled=true --conf spark.eventLog.dir=${LOG_DIR} $LOG_DIR/initHive.py
 
 QUERYEXTENSION=sql
-
-export TEMP_DIR=${CINECA_SCRATCH}/tmp
-mkdir -p ${TEMP_DIR}
 
 for QUERY in $QUERIES; do
     mkdir -p $LOG_DIR/hive/$QUERY
