@@ -67,7 +67,11 @@ $HADOOP_HOME/sbin/start-dfs.sh
 
 export TEMP_DIR=${CINECA_SCRATCH}/tmp
 mkdir -p ${TEMP_DIR}
-echo "SPARK_LOCAL_DIRS=\"${TEMP_DIR}\"" >> ${SPARK_HOME}/conf/spark-env.sh
+cat ${SPARK_HOME}/conf/spark-env.sh.template > ${SPARK_HOME}/conf/spark-env.sh
+echo "export SPARK_LOCAL_DIRS=\"${TEMP_DIR}\"" >> ${SPARK_HOME}/conf/spark-env.sh
+echo "export SPARK_WORKER_DIR=\"${TEMP_DIR}\"" >> ${SPARK_HOME}/conf/spark-env.sh
+chmod +x ${SPARK_HOME}/conf/spark-env.sh
+
 
 # Start Spark
 cat $PBS_NODEFILE | uniq > ${SPARK_HOME}/conf/slaves
